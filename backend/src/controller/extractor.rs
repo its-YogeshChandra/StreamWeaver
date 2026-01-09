@@ -135,6 +135,16 @@ pub async fn extractor(request: Request, stream: TcpStream) {
             }
         };
 
+        //the content-length
+        let content_length = match main_data.get("content-length") {
+            Some(content_length) => content_length,
+            None => {
+                let error = String::from("content length is missing");
+                errorhandler(&stream, &error);
+                return;
+            }
+        };
+
         //destructure the tuple
         let (vidcode, audcode) = code_handler(&output.to_string(), bitrate, vcodec);
 
@@ -181,6 +191,7 @@ pub async fn extractor(request: Request, stream: TcpStream) {
                 main_path.to_string_lossy().to_string(),
                 vcodec.to_string(),
                 bitrate.to_string(),
+                content_length.to_string(),
             );
         }
     }
@@ -238,7 +249,7 @@ impl VideoConfig {
 //function to change the video into chunks
 //the length of chunks will be specified by client
 
-fn chunk_video(video_path: String, vidcodec: String, bitrate: String) {
+fn chunk_video(video_path: String, vidcodec: String, bitrate: String, content_length: String) {
     //create the output dir
     let vidoutput = "vidoutput";
     std::fs::create_dir_all(vidoutput).expect("failed to create dir");
@@ -252,7 +263,6 @@ fn chunk_video(video_path: String, vidcodec: String, bitrate: String) {
         "-b:a 128k", // Audio bitrate
         "-ar 44100", // Audio sample rate
         "-start_number 0",
-        "-hls_time 10",
         "-hls_list_size 0",
         "-hls_playlist_type vod",
         "-f hls",
@@ -293,6 +303,8 @@ fn chunk_video(video_path: String, vidcodec: String, bitrate: String) {
     vid_options.push(vidconfigval.scale_filter);
 
     //5  Add the content
+    vid_options.push("-hls_time".to_string());
+    vid_options.push(content_length.to_string());
 
     //create the command
     let mut video_chunker = Command::new("ffmpeg");
@@ -321,6 +333,7 @@ fn chunk_video(video_path: String, vidcodec: String, bitrate: String) {
         .expect("failed to run ffmpeg");
 
     println!("cmd is called ");
+
     //check the output and the erorr
     if !cmd.stdout.is_empty() {
         println!("ffmpeg output is : {:?}", cmd.stdout)
