@@ -177,7 +177,60 @@ pub async fn extractor(request: Request, stream: TcpStream) {
             main_path.push(fileval.expect("fileval might not be a string"));
 
             //call the chunking function
-            chunk_video(main_path.to_string_lossy().to_string(), vcodec.to_string());
+            chunk_video(
+                main_path.to_string_lossy().to_string(),
+                vcodec.to_string(),
+                bitrate.to_string(),
+            );
+        }
+    }
+}
+
+//create struct to handle the bitrate
+#[derive(Debug, Clone)]
+pub struct VideoConfig {
+    pub bitrate: String,
+    pub maxrate: String,
+    pub bufsize: String,
+    pub scale_filter: String,
+}
+
+impl VideoConfig {
+    // This method takes a string slice and returns the Config
+    // We returns Option<Self> because the user might send an invalid resolution
+    pub fn from_resolution(resolution: &str) -> Option<Self> {
+        match resolution {
+            "4k" | "2160p" => Some(Self {
+                bitrate: "45000k".to_string(),
+                maxrate: "48000k".to_string(),
+                bufsize: "90000k".to_string(),
+                scale_filter: "scale=-2:2160".to_string(),
+            }),
+            "1080p" => Some(Self {
+                bitrate: "8000k".to_string(),
+                maxrate: "8560k".to_string(),
+                bufsize: "16000k".to_string(),
+                scale_filter: "scale=-2:1080".to_string(),
+            }),
+            "720p" => Some(Self {
+                bitrate: "2500k".to_string(),
+                maxrate: "2675k".to_string(),
+                bufsize: "5000k".to_string(),
+                scale_filter: "scale=-2:720".to_string(),
+            }),
+            "480p" => Some(Self {
+                bitrate: "1400k".to_string(),
+                maxrate: "1498k".to_string(),
+                bufsize: "2800k".to_string(),
+                scale_filter: "scale=-2:480".to_string(),
+            }),
+            "360p" => Some(Self {
+                bitrate: "800k".to_string(),
+                maxrate: "856k".to_string(),
+                bufsize: "1600k".to_string(),
+                scale_filter: "scale=-2:360".to_string(),
+            }),
+            _ => None, // Handle invalid input
         }
     }
 }
@@ -185,7 +238,7 @@ pub async fn extractor(request: Request, stream: TcpStream) {
 //function to change the video into chunks
 //the length of chunks will be specified by client
 
-fn chunk_video(video_path: String, vidcodec: String) {
+fn chunk_video(video_path: String, vidcodec: String, bitrate: String) {
     //create the output dir
     let vidoutput = "vidoutput";
     std::fs::create_dir_all(vidoutput).expect("failed to create dir");
@@ -196,27 +249,52 @@ fn chunk_video(video_path: String, vidcodec: String) {
     let options = [
         "-preset medium",
         "-crf 24",
-        //"-vf scale=-2:720", // Scale to 720p height, maintain aspect ratio
-        //"-b:v 2500k",     // Video bitrate for 720p
-        "-maxrate 45000k", // Maximum bitrate
-        "-bufsize 5000k",  // Buffer size
-        "-b:a 128k",       // Audio bitrate
-        "-ar 44100",       // Audio sample rate
+        "-b:a 128k", // Audio bitrate
+        "-ar 44100", // Audio sample rate
         "-start_number 0",
-        //"-hls_time 10",
+        "-hls_time 10",
         "-hls_list_size 0",
         "-hls_playlist_type vod",
         "-f hls",
     ];
+
     //vector of options
-    let mut vecoptions: Vec<String> = Vec::new();
+    let mut vid_options: Vec<String> = Vec::new();
     for option in options {
         let individual_val = option.split_whitespace();
         for part in individual_val {
-            vecoptions.push(part.to_string());
+            vid_options.push(part.to_string());
         }
     }
 
+    //get the bitrate , maxrate and buffer size accroding to the resolution by user
+    let vidconfigval = match VideoConfig::from_resolution(&bitrate) {
+        Some(cfg) => cfg,
+        None => {
+            //error handling
+            VideoConfig::from_resolution("720p").unwrap()
+        }
+    };
+
+    // 1. Add Bitrate
+    vid_options.push("-b:v".to_string());
+    vid_options.push(vidconfigval.bitrate);
+
+    // 2. Add Maxrate
+    vid_options.push("-maxrate".to_string());
+    vid_options.push(vidconfigval.maxrate);
+
+    // 3. Add Buffer Size
+    vid_options.push("-bufsize".to_string());
+    vid_options.push(vidconfigval.bufsize);
+
+    // 4. Add Scale Filter
+    vid_options.push("-vf".to_string());
+    vid_options.push(vidconfigval.scale_filter);
+
+    //5  Add the content
+
+    //create the command
     let mut video_chunker = Command::new("ffmpeg");
 
     video_chunker
@@ -225,7 +303,8 @@ fn chunk_video(video_path: String, vidcodec: String) {
         .arg("-c:v")
         .arg("libx264")
         .arg("-c:a")
-        .arg("aac");
+        .arg("aac")
+        .args(vid_options);
 
     // .arg(output_options)
     // .arg(vidoutput)
@@ -233,13 +312,6 @@ fn chunk_video(video_path: String, vidcodec: String) {
     // .stderr(Stdio::piped())
     // .output()
     // .expect("failed to run ffmped");
-    //
-    // //iterate over the option and feed it to video_chunker
-    // for option in options {
-    //     //individual value
-    //     let individual_val = option.split_whitespace();
-    //     video_chunker.args(individual_val);
-    // }
 
     let cmd = video_chunker
         .arg(final_destination)
@@ -254,12 +326,12 @@ fn chunk_video(video_path: String, vidcodec: String) {
         println!("ffmpeg output is : {:?}", cmd.stdout)
     }
 
-    if !cmd.stderr.is_empty() {
-        let error = String::from_utf8_lossy(&cmd.stderr);
-        for line in error.lines() {
-            println!("ffmpeg error is : {:?}", line)
-        }
-    }
+    // if !cmd.stderr.is_empty() {
+    //     let error = String::from_utf8_lossy(&cmd.stderr);
+    //     for line in error.lines() {
+    //         println!("ffmpeg error is : {:?}", line)
+    //     }
+    // }
 }
 
 //function to get path from folder
