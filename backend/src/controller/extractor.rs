@@ -335,8 +335,10 @@ fn chunk_video(video_path: String, vidcodec: String, bitrate: String, content_le
     println!("cmd is called ");
 
     //check the output and the erorr
-    if !cmd.stdout.is_empty() {
-        println!("ffmpeg output is : {:?}", cmd.stdout)
+    if cmd.status.success() {
+        println!("ffmpeg output is : {:?}", cmd.stdout);
+    } else {
+        eprint!(" ffmpeg faild with status : {}", cmd.status);
     }
 
     // if !cmd.stderr.is_empty() {
