@@ -1,4 +1,5 @@
 //struct for handling request;
+#[derive(Debug)]
 pub struct Request {
     pub httpversion: String,
     pub host: String,

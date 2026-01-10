@@ -16,6 +16,9 @@ export class ApiClass {
       const payload = { url: url };
       console.log("Calling format API:", formatUrl, "with payload:", payload);
 
+      //call the url here 
+      console.log("url is : ")
+      console.log(url);
       const formats = await axios.post(formatUrl, payload, {
         headers: {
           "Content-Type": "application/json"

@@ -1,0 +1,51 @@
+//extract the values from the request
+    for part in request.split("\r\n") {
+        println!("------printing parts ------");
+        println! {"{}", part};
+        println!("------------");
+
+        //match the data and update the request_data object
+        if part.starts_with("GET")
+            || part.starts_with("POST")
+            || part.starts_with("DELETE")
+            || part.starts_with("PUT")
+            || part.starts_with("OPTIONS")
+        {
+            for items in part.split(" ") {
+                match items {
+                    "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS" => {
+                        request_data.method = items.to_string()
+                    }
+                    s if s.starts_with("HTTP") => request_data.httpversion = s.to_string(),
+                    m if m.starts_with("/") => request_data.route = m.to_string(),
+                    _ => {
+                        eprintln!("the data is empty");
+                    }
+                }
+            }
+        }
+        // for content type
+        else if part.starts_with("Content-Type") {
+            request_data.content_type = part.to_string()
+        }
+        // for host
+        else if part.starts_with("Host") {
+            for items in part.split(" ") {
+                println!("items: {}", items);
+                match items {
+                    s if s.starts_with("1") => request_data.host = s.to_string(),
+                    _ => {
+                        println!(" ");
+                    }
+                }
+            }
+        }
+        //for body data if present
+        else if part.starts_with("{") {
+            request_data.body_data = part.to_string()
+        }
+    }
+
+    //call the route moderator function
+    routes_moderator(request_data, stream);
+

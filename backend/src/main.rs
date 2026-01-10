@@ -1,3 +1,4 @@
+use std::clone;
 use std::io::{BufRead, BufReader, Read, Write};
 // use std::io::prelude::*;
 use std::net::TcpListener;
@@ -13,7 +14,7 @@ mod controller;
 mod services;
 
 use crate::routes::routes_moderator;
-use crate::utils::Request;
+use crate::utils::{Request, handle_options_response, handle_response};
 
 //main funciton that run the program
 fn main() {
@@ -51,115 +52,125 @@ fn main() {
 }
 
 //option using impl
-
-fn handle_connection(mut stream: TcpStream) {
-    //creating buffer
-    //Buffers in Rust: In Rust, a buffer is typically a block of memory used for temporary storage of data. Buffers are commonly used when reading or writing data to or from sources like files, network sockets, or memory
-    let mut buffer = [0; 512];
-
-    let mut reader = BufReader::new(&mut stream);
-
-    // stream.read(&mut buffer).unwrap();
-    //
-    // println!("raw stream data : {:?}", &stream);
-
-    //read the buffer put and seperate different parts of it
-
-    let request = String::from_utf8_lossy(&buffer[..]);
-
-    //print the request
-    println!("Request : {}", request);
-
-    //make instance of request and update the values
-    let mut request_data = Request::new(
-        "random".to_string(),
-        "random".to_string(),
-        "random".to_string(),
-        "random".to_string(),
-        "random".to_string(),
-        "random".to_string(),
-        "random".to_string(),
-    );
-
-    //read the request line
-    let mut request_line = String::new();
-    if reader.read_line(&mut request_line).unwrap() == 0 {
-        return;
-    }
-
-    //parse the first line
-    let firstline: Vec<&str> = request_line.split_whitespace().collect();
-    if firstline.len() > 3 {
-        request_data.method = firstline[0].to_string();
-        request_data.route = firstline[1].to_string();
-        request_data.httpversion = firstline[2].to_string();
-    }
-
-    //for content length
-    let mut content_length = 0;
-    loop {
-        let mut line = String::new();
-        let bytes_read = reader.read_line(&mut line).unwrap();
-
-        if bytes_read == 0 || line == "\r\n" {
-            break;
-        }
-        //parse handler
-    }
-
-    //extract the values from the request
-    for part in request.split("\r\n") {
-        println!("------printing parts ------");
-        println! {"{}", part};
-        println!("------------");
-
-        //match the data and update the request_data object
-        if part.starts_with("GET")
-            || part.starts_with("POST")
-            || part.starts_with("DELETE")
-            || part.starts_with("PUT")
-            || part.starts_with("OPTIONS")
-        {
-            for items in part.split(" ") {
-                match items {
-                    "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS" => {
-                        request_data.method = items.to_string()
-                    }
-                    s if s.starts_with("HTTP") => request_data.httpversion = s.to_string(),
-                    m if m.starts_with("/") => request_data.route = m.to_string(),
-                    _ => {
-                        eprintln!("the data is empty");
-                    }
-                }
-            }
-        }
-        // for content type
-        else if part.starts_with("Content-Type") {
-            request_data.content_type = part.to_string()
-        }
-        // for host
-        else if part.starts_with("Host") {
-            for items in part.split(" ") {
-                println!("items: {}", items);
-                match items {
-                    s if s.starts_with("1") => request_data.host = s.to_string(),
-                    _ => {
-                        println!(" ");
-                    }
-                }
-            }
-        }
-        //for body data if present
-        else if part.starts_with("{") {
-            request_data.body_data = part.to_string()
-        }
-    }
-
-    //call the route moderator function
-    routes_moderator(request_data, stream);
-}
+//
+// fn handle_connection(mut stream: TcpStream) {
+//     //creating buffer
+//     //Buffers in Rust: In Rust, a buffer is typically a block of memory used for temporary storage of data. Buffers are commonly used when reading or writing data to or from sources like files, network sockets, or memory
+//
+//     let mut reader = BufReader::new(&mut stream);
+//
+//     //read value
+//
+//     //make instance of request and update the values
+//     let mut request_data = Request::new(
+//         "random".to_string(),
+//         "random".to_string(),
+//         "random".to_string(),
+//         "random".to_string(),
+//         "random".to_string(),
+//         "random".to_string(),
+//         "random".to_string(),
+//     );
+//
+//     //read the request line
+//     let mut request_line = String::new();
+//     if reader.read_line(&mut request_line).unwrap() == 0 {
+//         //eror while reading valule
+//         println!("error while reading value");
+//         return;
+//     }
+//
+//     //parse the first line
+//     let firstline: Vec<&str> = request_line.split_whitespace().collect();
+//     println!("first line is : {:?}", firstline);
+//
+//     if firstline.len() > 3 {
+//         //print th vaule
+//         println!("first line value : {:?}", firstline);
+//
+//         request_data.method = firstline[0].to_string();
+//         request_data.route = firstline[1].to_string();
+//         request_data.httpversion = firstline[2].to_string();
+//     }
+//
+//     //for content length
+//     let mut content_length = 0;
+//     loop {
+//         let mut line = String::new();
+//         let bytes_read = reader.read_line(&mut line).unwrap();
+//
+//         if bytes_read == 0 || line == "\r\n" {
+//             break;
+//         }
+//         //parse handler
+//         if line.to_lowercase().starts_with("content_length:") {
+//             let parts: Vec<&str> = line.split_whitespace().collect();
+//             if parts.len() > 1 {
+//                 content_length = parts[1].parse::<usize>().unwrap();
+//             } else if line.starts_with("Content-Type:") {
+//                 request_data.content_type = line.trim().to_string();
+//             } else if line.starts_with("Host: ") {
+//                 request_data.host = line.trim().to_string();
+//             }
+//         }
+//     }
+//
+//     if content_length > 0 {
+//         let mut body_buffer = vec![0; content_length];
+//
+//         //read the block until we get all the bytes
+//         reader.read_exact(&mut body_buffer).unwrap();
+//         request_data.body_data = String::from_utf8_lossy(&body_buffer).to_string();
+//     }
+//
+//     //println the final rqeust object
+//     println!("final request object : {:?}", request_data);
+//
+//     //drop the reaqder to release borrow on stream
+//     drop(reader);
+//
+//     //call the router function
+//     routes_moderator(request_data, stream);
+// }
 
 //request format
 //HTTP-Version Status-Code Reason-Phrase CRLF
 // headers CRLF
-// message-body
+// message-body/
+//
+fn handle_connection(mut stream: TcpStream) {
+    let mut buf_read = BufReader::new(&mut stream);
+    let mut line = String::new();
+    let mut content_length: usize = 0;
+
+    // Step 1: Read all headers
+    loop {
+        line.clear();
+        let bytes_read = buf_read.read_line(&mut line).unwrap();
+
+        if bytes_read == 0 || line.trim().is_empty() {
+            break; // End of headers
+        }
+
+        println!("Received: {}", line);
+
+        // Step 2: Parse Content-Length header
+        if line.to_lowercase().starts_with("content-length:") {
+            content_length = line.split(':').nth(1).unwrap().trim().parse().unwrap_or(0);
+        }
+
+        if line.starts_with("OPTIONS") {
+            handle_options_response(stream);
+            return;
+        }
+    }
+
+    // Step 3: Read the body (THIS IS WHAT YOU'RE MISSING!)
+    if content_length > 0 {
+        let mut body = vec![0u8; content_length];
+        buf_read.read_exact(&mut body).unwrap();
+
+        let body_str = String::from_utf8(body).unwrap();
+        println!("Body: {}", body_str); // ← Now you'll see your JSON!
+    }
+}
