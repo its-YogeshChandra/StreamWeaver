@@ -1,11 +1,13 @@
-use crate::services::{code_handler, codeextractor};
-use crate::utils::{
-    Request, Response, ResponseBody, errorhandler, handle_response, json_deserializer,
-};
+extern crate tar;
+use crate::services::code_handler;
+use crate::utils::{Request, ResponseBody, errorhandler, handle_tar_response, json_deserializer};
 use serde_json::Value;
+use std::fs;
 use std::path::Path;
 use std::process::Stdio;
 use std::{collections::HashMap, net::TcpStream, process::Command};
+use tar::Builder;
+
 #[tokio::main]
 pub async fn extractor(request: Request, stream: TcpStream) {
     //get the data from the reqeust
@@ -188,6 +190,23 @@ pub async fn extractor(request: Request, stream: TcpStream) {
                 bitrate.to_string(),
                 content_length.to_string(),
             );
+
+            //start creating a tar file
+            let mut buffer = Vec::new();
+            {
+                let mut archive = Builder::new(&mut buffer);
+                let dirpath = Path::new("vidoutput");
+                let _ = archive.append_dir_all("playlist", dirpath);
+                let _ = archive.finish();
+            }
+            //delete the public and vidoutput folder
+            let vidoutputpath = Path::new("vidoutput");
+            let publicpath = Path::new("public");
+            let _ = fs::remove_dir_all(vidoutputpath);
+            let _ = fs::remove_dir_all(publicpath);
+
+            //call the handle tar response
+            handle_tar_response(stream, buffer);
         }
     }
 }
@@ -332,16 +351,10 @@ fn chunk_video(video_path: String, vidcodec: String, bitrate: String, content_le
     //check the output and the erorr
     if cmd.status.success() {
         println!("ffmpeg output is : {:?}", cmd.stdout);
+        return;
     } else {
         eprint!(" ffmpeg faild with status : {}", cmd.status);
     }
-
-    // if !cmd.stderr.is_empty() {
-    //     let error = String::from_utf8_lossy(&cmd.stderr);
-    //     for line in error.lines() {
-    //         println!("ffmpeg error is : {:?}", line)
-    //     }
-    // }
 }
 
 //function to get path from folder

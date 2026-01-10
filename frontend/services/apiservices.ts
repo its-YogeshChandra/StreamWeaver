@@ -51,10 +51,11 @@ export class ApiClass {
       const value = await axios.post(streamUrl, payload, {
         headers: {
           "Content-Type": "application/json"
-        }
+        },
+        responseType: 'blob' // Important for binary files (TAR, ZIP, etc.)
       })
 
-      console.log("Stream API response:", value.data);
+      console.log("Stream API response:", value);
       return value;
 
     } catch (error) {

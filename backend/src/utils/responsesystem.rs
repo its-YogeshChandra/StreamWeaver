@@ -66,3 +66,29 @@ Content-Length: 0\r\n\
     stream.write_all(response.as_bytes()).unwrap();
     return;
 }
+
+//handle tar reponse
+pub fn handle_tar_response(mut stream: TcpStream, tar_buffer: Vec<u8>) {
+    let headers = format!(
+        "HTTP/1.1 200 OK\r\n\
+        Access-Control-Allow-Origin: *\r\n\
+        Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
+        Access-Control-Allow-Headers: Content-Type\r\n\
+        Content-Type: application/x-tar\r\n\
+        Content-Disposition: attachment; filename=\"backup.tar\"\r\n\
+        Content-Length: {}\r\n\
+        Connection: close\r\n\
+        \r\n",
+        tar_buffer.len() // Use the byte length of the buffer
+    );
+
+    // Step A: Write Headers first (as bytes)
+    stream
+        .write_all(headers.as_bytes())
+        .expect("error writing headers");
+
+    // Step B: Write the Binary Body separately
+    stream.write_all(&tar_buffer).expect("error writing body");
+
+    stream.flush().expect("error flushing stream");
+}

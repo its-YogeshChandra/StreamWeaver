@@ -7,5 +7,5 @@ pub mod routehandler;
 pub use errorhandler::errorhandler;
 pub use jsondeserializer::{ResponseBody, json_deserializer};
 pub use requesthandler::Request;
-pub use responsesystem::{Response, handle_options_response, handle_response};
+pub use responsesystem::{Response, handle_options_response, handle_response, handle_tar_response};
 pub use routehandler::RouteData;

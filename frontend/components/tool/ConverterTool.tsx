@@ -26,7 +26,7 @@ export function ConverterTool() {
   })
 
   const [error, setError] = useState<string | null>(null)
-  const [streamUrl, setStreamUrl] = useState<string>("")
+  const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   // Handler for URL submission - fetches available formats
@@ -101,18 +101,21 @@ export function ConverterTool() {
       })
 
       if (response && response.data) {
-        const streamPath = response.data.stream_url || response.data.path || "/vidoutput/index.m3u8"
-        setStreamUrl(streamPath)
+        // Handle Blob Response (TAR File)
+        const blob = response.data
+        setDownloadBlob(blob)
 
-        // Clear session storage on success
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem("stream_weaver_url")
-        }
+        // Trigger Auto-Download
+        const downloadUrl = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.setAttribute('download', 'stream_weaver_output.tar') // or .zip
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
 
-        // Simulate processing delay for better UX
-        setTimeout(() => {
-          setState("COMPLETED")
-        }, 2000)
+        // Simulate processing complete
+        setState("COMPLETED")
       } else {
         throw new Error("Failed to start video processing")
       }
@@ -140,7 +143,7 @@ export function ConverterTool() {
       sessionStorage.removeItem("stream_weaver_url")
     }
     setError(null)
-    setStreamUrl("")
+    setDownloadBlob(null)
     setIsLoading(false)
   }
 
@@ -233,25 +236,51 @@ export function ConverterTool() {
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-6"
             >
-              <div className="flex items-center justify-between pb-4">
-                <h3 className="text-xl font-bold text-green-600 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  Stream Ready
-                </h3>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => window.open(streamUrl, '_blank')}>
-                    <Download className="w-4 h-4 mr-2" /> .m3u8
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={reset}>
-                    <RefreshCw className="w-4 h-4 mr-2" /> New Video
-                  </Button>
+              <div className="text-center pb-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Download className="w-8 h-8 text-green-600" />
                 </div>
+                <h3 className="text-2xl font-bold text-gray-900">Conversion Complete!</h3>
+                <p className="text-gray-500">Your download should have started automatically.</p>
               </div>
 
-              <HlsPlayer src={streamUrl} />
+              {/* Original Video Preview */}
+              <div className="aspect-video w-full rounded-xl overflow-hidden bg-black shadow-lg">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={url.replace("watch?v=", "embed/").replace("shorts/", "embed/")}
+                  title="Original Video"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
 
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-sm font-mono text-gray-600 break-all">
-                {typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}${streamUrl}` : streamUrl}
+              <div className="flex flex-col gap-3 pt-4">
+                {downloadBlob && (
+                  <Button
+                    size="lg"
+                    variant="happy"
+                    className="w-full"
+                    onClick={() => {
+                      const downloadUrl = window.URL.createObjectURL(downloadBlob)
+                      const link = document.createElement('a')
+                      link.href = downloadUrl
+                      link.setAttribute('download', 'stream_weaver_output.tar')
+                      document.body.appendChild(link)
+                      link.click()
+                      link.remove()
+                    }}
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Download TAR File Again
+                  </Button>
+                )}
+
+                <Button variant="ghost" size="lg" onClick={reset} className="w-full">
+                  <RefreshCw className="w-4 h-4 mr-2" /> Convert Another Video
+                </Button>
               </div>
             </motion.div>
           )}
