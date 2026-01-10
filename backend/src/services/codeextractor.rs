@@ -16,10 +16,7 @@ pub fn code_handler(output: &str, bitrate: &str, vcodec: &str) -> (String, Strin
         }
 
         //check the the audio format
-        if line.contains("audio only")
-            && line.contains("English")
-            && (line.contains("opus") || line.contains("map4a.40.5"))
-        {
+        if line.contains("audio only") && (line.contains("opus") || line.contains("map4a.40.5")) {
             //split the line and get the
             let parts: Vec<&str> = line.split_whitespace().collect();
             let code = parts.get(0).clone().expect("not a string value");
@@ -27,5 +24,7 @@ pub fn code_handler(output: &str, bitrate: &str, vcodec: &str) -> (String, Strin
         }
     }
 
+    println!("vidcode : {}", vidcode);
+    println!("audcode : {}", audcode);
     (vidcode, audcode)
 }
