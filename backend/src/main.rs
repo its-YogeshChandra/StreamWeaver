@@ -143,18 +143,26 @@ fn handle_connection(mut stream: TcpStream) {
     let mut line = String::new();
     let mut content_length: usize = 0;
 
-    // Step 1: Read all headers
+    //make the request body
+    let mut request_data = Request::new(
+        "random".to_string(),
+        "random".to_string(),
+        "random".to_string(),
+        "random".to_string(),
+        "random".to_string(),
+        "random".to_string(),
+        "random".to_string(),
+    );
+
     loop {
         line.clear();
         let bytes_read = buf_read.read_line(&mut line).unwrap();
-
         if bytes_read == 0 || line.trim().is_empty() {
             break; // End of headers
         }
-
         println!("Received: {}", line);
 
-        // Step 2: Parse Content-Length header
+        //Parse Content-Length header
         if line.to_lowercase().starts_with("content-length:") {
             content_length = line.split(':').nth(1).unwrap().trim().parse().unwrap_or(0);
         }
@@ -162,9 +170,9 @@ fn handle_connection(mut stream: TcpStream) {
         if line.starts_with("OPTIONS") {
             handle_options_response(stream);
             return;
+        } else {
         }
     }
-
     // Step 3: Read the body (THIS IS WHAT YOU'RE MISSING!)
     if content_length > 0 {
         let mut body = vec![0u8; content_length];
@@ -172,5 +180,6 @@ fn handle_connection(mut stream: TcpStream) {
 
         let body_str = String::from_utf8(body).unwrap();
         println!("Body: {}", body_str); // ← Now you'll see your JSON!
+        request_data.body_data = body_str;
     }
 }
