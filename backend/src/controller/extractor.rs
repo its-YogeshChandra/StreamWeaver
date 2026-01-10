@@ -22,7 +22,7 @@ pub async fn extractor(request: Request, stream: TcpStream) {
     let mut main_data: HashMap<String, String> = HashMap::new();
 
     // check for the keys in the data
-    let keys = ["bitrate", "url", "content-length", "vcodec"];
+    let keys = ["bitrate", "url", "content_length", "vcodec"];
     let vcodec: Vec<&str> = vec!["avc1.64002a", "av01.0.09M.08"];
     if let Some(data) = iterable_data {
         //iterate the value
@@ -49,8 +49,8 @@ pub async fn extractor(request: Request, stream: TcpStream) {
                         main_data.insert(key.to_string(), s.clone());
                     }
 
-                    //add the content-length
-                    ("content-length", Value::String(s)) => {
+                    //add the content_length
+                    ("content_length", Value::String(s)) => {
                         if s.parse::<u64>().is_ok() {
                             main_data.insert(key.to_string(), s.clone());
                         } else {
@@ -73,8 +73,8 @@ pub async fn extractor(request: Request, stream: TcpStream) {
                         errorhandler(&stream, "invalid url value");
                         return;
                     }
-                    ("content-length", _) => {
-                        errorhandler(&stream, "invalid content-length value");
+                    ("content_length", _) => {
+                        errorhandler(&stream, "invalid content_length value");
                     }
 
                     ("vcodec", _) => {
@@ -135,8 +135,8 @@ pub async fn extractor(request: Request, stream: TcpStream) {
             }
         };
 
-        //the content-length
-        let content_length = match main_data.get("content-length") {
+        //the content_length
+        let content_length = match main_data.get("content_length") {
             Some(content_length) => content_length,
             None => {
                 let error = String::from("content length is missing");

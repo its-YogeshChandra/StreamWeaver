@@ -3,19 +3,48 @@ import { motion } from "framer-motion"
 import { Check, Settings2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+interface Format {
+    bitrate: string;
+    content_length: string;
+    vcodec: string;
+    resolution?: string;
+}
+
 interface ResolutionSelectorProps {
-    metadata: string[]
-    selected: string | null
-    onSelect: (res: string) => void
+    metadata: Format[]
+    selected: Format | null
+    onSelect: (format: Format) => void
 }
 
 export function ResolutionSelector({ metadata, selected, onSelect }: ResolutionSelectorProps) {
-    // Sort resolutions desc (1080p -> 144p)
+    // Sort by bitrate (higher first)
     const sorted = [...metadata].sort((a, b) => {
-        const valA = parseInt(a.replace('p', ''))
-        const valB = parseInt(b.replace('p', ''))
-        return valB - valA
+        const bitrateA = parseInt(a.bitrate) || 0
+        const bitrateB = parseInt(b.bitrate) || 0
+        return bitrateB - bitrateA
     })
+
+    // Helper to format file size
+    const formatSize = (bytes: string) => {
+        const size = parseInt(bytes)
+        if (size >= 1024 * 1024 * 1024) {
+            return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`
+        } else if (size >= 1024 * 1024) {
+            return `${(size / (1024 * 1024)).toFixed(1)} MB`
+        } else if (size >= 1024) {
+            return `${(size / 1024).toFixed(1)} KB`
+        }
+        return `${size} B`
+    }
+
+    // Helper to format bitrate
+    const formatBitrate = (bitrate: string) => {
+        const rate = parseInt(bitrate)
+        if (rate >= 1000) {
+            return `${(rate / 1000).toFixed(1)} Mbps`
+        }
+        return `${rate} Kbps`
+    }
 
     return (
         <div className="w-full space-y-4">
@@ -29,15 +58,15 @@ export function ResolutionSelector({ metadata, selected, onSelect }: ResolutionS
                 </span>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {sorted.map((res) => {
-                    const isSelected = selected === res
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {sorted.map((format, index) => {
+                    const isSelected = selected?.bitrate === format.bitrate && selected?.vcodec === format.vcodec
                     return (
                         <motion.button
-                            key={res}
+                            key={`${format.bitrate}-${format.vcodec}-${index}`}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => onSelect(res)}
+                            onClick={() => onSelect(format)}
                             className={cn(
                                 "relative flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200",
                                 isSelected
@@ -45,15 +74,18 @@ export function ResolutionSelector({ metadata, selected, onSelect }: ResolutionS
                                     : "border-gray-100 hover:border-happy-blue/30 bg-white"
                             )}
                         >
-                            <div className="flex flex-col items-start">
+                            <div className="flex flex-col items-start gap-1">
                                 <span className={cn(
                                     "font-bold text-lg",
                                     isSelected ? "text-happy-blue" : "text-gray-700"
                                 )}>
-                                    {res}
+                                    {format.resolution || formatBitrate(format.bitrate)}
                                 </span>
-                                <span className="text-xs text-muted-foreground capitalize">
-                                    MP4 • H.264
+                                <span className="text-xs text-muted-foreground">
+                                    {format.vcodec} • {formatSize(format.content_length)}
+                                </span>
+                                <span className="text-xs text-muted-foreground font-mono">
+                                    {formatBitrate(format.bitrate)}
                                 </span>
                             </div>
 

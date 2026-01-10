@@ -34,20 +34,35 @@ pub fn handle_response<T: Serialize>(response: Response<T>, mut stream: TcpStrea
     //make the response string from it
     let response = format!(
         "HTTP/1.1 200 OK\r\n\
-         Content-Type: application/json\r\n\
-         Content-Length: {}\r\n\
-         Connection: close\r\n\
-         \r\n\
-         {}",
+        Access-Control-Allow-Origin: *\r\n\
+        Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
+        Access-Control-Allow-Headers: Content-Type\r\n\
+        Content-Type: application/json\r\n\
+        Content-Length: {}\r\n\
+        Connection: close\r\n\
+        \r\n\
+        {}",
         response_data.len(),
         response_data
-    );
-
-    // send the data to the stream
+    ); // send the data to the stream
     stream
         .write_all(response.as_bytes())
         .expect("error while writing");
 
     //flush the stream
     stream.flush().expect("error while sending data")
+}
+
+pub fn handle_options_response(mut stream: TcpStream) {
+    //format of response
+    let response = "HTTP/1.1 200 OK\r\n\
+Access-Control-Allow-Origin: *\r\n\
+Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
+Access-Control-Allow-Headers: Content-Type\r\n\
+Content-Length: 0\r\n\
+\r\n";
+
+    //send the response back
+    stream.write_all(response.as_bytes()).unwrap();
+    return;
 }
