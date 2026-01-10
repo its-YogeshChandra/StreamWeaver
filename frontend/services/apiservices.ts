@@ -4,9 +4,17 @@ import axios from "axios";
 const formatUrl = process.env.NEXT_PUBLIC_FORMAT_URL;
 const streamUrl = process.env.NEXT_PUBLIC_STREAM_URL;
 
+export interface StreamPayload {
+  url: String
+  bitrate: String // This maps to resolution like "1080p"
+  content_length: String
+  vcodec: String
+}
+
 export class ApiClass {
 
   // Fetch available video formats from the backend
+  // Returns: { success: true, message: "...", data: ["1080p", "720p", "480p", ...] }
   async getFormatService(url: String) {
     try {
       if (!formatUrl) {
@@ -16,9 +24,6 @@ export class ApiClass {
       const payload = { url: url };
       console.log("Calling format API:", formatUrl, "with payload:", payload);
 
-      //call the url here 
-      console.log("url is : ")
-      console.log(url);
       const formats = await axios.post(formatUrl, payload, {
         headers: {
           "Content-Type": "application/json"
@@ -34,14 +39,13 @@ export class ApiClass {
     }
   }
 
-  // Initiate video streaming with selected quality
-  async getStreamService(url: String, bitrate: String, content_length: String, vcodec: String) {
+  // Initiate video streaming with full configuration
+  async getStreamService(payload: StreamPayload) {
     try {
       if (!streamUrl) {
         throw new Error("Stream URL is not configured in environment variables")
       }
 
-      const payload = { url: url, bitrate: bitrate, content_length: content_length, vcodec: vcodec };
       console.log("Calling stream API:", streamUrl, "with payload:", payload);
 
       const value = await axios.post(streamUrl, payload, {

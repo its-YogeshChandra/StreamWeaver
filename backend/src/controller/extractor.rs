@@ -1,13 +1,8 @@
-use crate::main;
 use crate::services::{code_handler, codeextractor};
 use crate::utils::{
     Request, Response, ResponseBody, errorhandler, handle_response, json_deserializer,
 };
-use core::error;
 use serde_json::Value;
-use std::fs::create_dir_all;
-use std::io::{stderr, stdout};
-use std::path;
 use std::path::Path;
 use std::process::Stdio;
 use std::{collections::HashMap, net::TcpStream, process::Command};

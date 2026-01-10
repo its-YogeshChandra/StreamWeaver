@@ -3,17 +3,12 @@
 use crate::utils::handle_response;
 use std::net::TcpStream;
 use std::process::Stdio;
-use std::result;
 // bringing  sirealization crate serde
 use crate::services::format_handler;
 use crate::utils::errorhandler;
 use crate::utils::{Request, Response, ResponseBody, json_deserializer};
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
 use std::process::Command;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[tokio::main]
 pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
