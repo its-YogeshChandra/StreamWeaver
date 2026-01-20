@@ -19,7 +19,7 @@ use crate::utils::{Request, handle_options_response, handle_response};
 //main funciton that run the program
 fn main() {
     //creating a simple webserver
-    let listener = TcpListener::bind("127.0.0.1:8080");
+    let listener = TcpListener::bind("0.0.0.0:8080");
 
     // error handling if error while handling error
     match listener {
