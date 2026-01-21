@@ -18,13 +18,16 @@ use crate::utils::{Request, handle_options_response, handle_response};
 
 //main funciton that run the program
 fn main() {
+    println!("Starting backend server...");
+    
     //creating a simple webserver
     let listener = TcpListener::bind("0.0.0.0:8080");
 
     // error handling if error while handling error
     match listener {
         Ok(connection) => {
-            println! {"connection successfully established"};
+            println!("Server listening on 0.0.0.0:8080");
+            println!("connection successfully established");
 
             // loop and check the stream from listener
             for stream in connection.incoming() {
@@ -45,8 +48,9 @@ fn main() {
             }
         }
         Err(error) => {
-            println! {"error while establishing connection "};
-            println! {"error: {}", error};
+            eprintln!("ERROR: Failed to bind to 0.0.0.0:8080");
+            eprintln!("Error details: {}", error);
+            std::process::exit(1);
         }
     }
 }
