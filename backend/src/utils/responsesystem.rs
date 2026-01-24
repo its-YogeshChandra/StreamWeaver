@@ -83,12 +83,19 @@ pub fn handle_tar_response(mut stream: TcpStream, tar_buffer: Vec<u8>) {
     );
 
     // Step A: Write Headers first (as bytes)
-    stream
-        .write_all(headers.as_bytes())
-        .expect("error writing headers");
+    if let Err(e) = stream.write_all(headers.as_bytes()) {
+        eprintln!("[ERROR] Failed to write headers: {} (client may have disconnected)", e);
+        return;
+    }
 
     // Step B: Write the Binary Body separately
-    stream.write_all(&tar_buffer).expect("error writing body");
+    if let Err(e) = stream.write_all(&tar_buffer) {
+        eprintln!("[ERROR] Failed to write body: {} (client may have disconnected)", e);
+        return;
+    }
 
-    stream.flush().expect("error flushing stream");
+    if let Err(e) = stream.flush() {
+        eprintln!("[ERROR] Failed to flush stream: {}", e);
+    }
 }
+

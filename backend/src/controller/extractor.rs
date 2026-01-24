@@ -185,13 +185,39 @@ pub async fn extractor(request: Request, stream: TcpStream) {
 
         //get the error if any
         let downloader_error = String::from_utf8_lossy(&downlaoder_ytdlp.stderr);
+        
+        // Log download status
+        eprintln!("[DEBUG] Download completed. Output empty: {}, Error empty: {}", 
+            downloader_output.is_empty(), downloader_error.is_empty());
+        
+        if !downloader_error.is_empty() && downloader_output.is_empty() {
+            eprintln!("[ERROR] yt-dlp download failed: {}", downloader_error);
+            errorhandler(&stream, &format!("Download failed: {}", downloader_error));
+            return;
+        }
+        
         if !downloader_output.is_empty() {
             //make the path buff
             let mut main_path = std::path::PathBuf::from("public");
 
             //output dir
-            let fileval = read_dir(video_download_folder.to_string());
-            main_path.push(fileval.expect("fileval might not be a string"));
+            let fileval = match read_dir(video_download_folder.to_string()) {
+                Ok(f) => f,
+                Err(e) => {
+                    eprintln!("[ERROR] Failed to read download folder: {}", e);
+                    errorhandler(&stream, "Failed to find downloaded file");
+                    return;
+                }
+            };
+            
+            if fileval.is_empty() {
+                eprintln!("[ERROR] No files found in download folder");
+                errorhandler(&stream, "Download succeeded but no file found");
+                return;
+            }
+            
+            main_path.push(&fileval);
+            eprintln!("[DEBUG] Processing video: {:?}", main_path);
 
             //call the chunking function
             chunk_video(
@@ -201,14 +227,32 @@ pub async fn extractor(request: Request, stream: TcpStream) {
                 content_length.to_string(),
             );
 
+            eprintln!("[DEBUG] Video chunking completed, building tar...");
+
             //start creating a tar file
             let mut buffer = Vec::new();
             {
                 let mut archive = Builder::new(&mut buffer);
                 let dirpath = Path::new("vidoutput");
-                let _ = archive.append_dir_all("playlist", dirpath);
+                
+                if !dirpath.exists() {
+                    eprintln!("[ERROR] vidoutput directory not found");
+                    errorhandler(&stream, "Video processing failed - output not created");
+                    // Cleanup
+                    let _ = fs::remove_dir_all("public");
+                    return;
+                }
+                
+                if let Err(e) = archive.append_dir_all("playlist", dirpath) {
+                    eprintln!("[ERROR] Failed to create tar archive: {}", e);
+                    errorhandler(&stream, "Failed to create archive");
+                    return;
+                }
                 let _ = archive.finish();
             }
+            
+            eprintln!("[DEBUG] Tar file built, size: {} bytes", buffer.len());
+            
             //delete the public and vidoutput folder
             let vidoutputpath = Path::new("vidoutput");
             let publicpath = Path::new("public");
@@ -216,8 +260,16 @@ pub async fn extractor(request: Request, stream: TcpStream) {
             let _ = fs::remove_dir_all(publicpath);
 
             //call the handle tar response
+            eprintln!("[DEBUG] Sending tar response...");
             handle_tar_response(stream, buffer);
+            eprintln!("[DEBUG] Response sent successfully");
+        } else {
+            eprintln!("[ERROR] Downloader output was empty");
+            errorhandler(&stream, "Video download produced no output");
         }
+    } else {
+        eprintln!("[ERROR] yt-dlp format list was empty");
+        errorhandler(&stream, "Could not fetch video formats");
     }
 }
 
