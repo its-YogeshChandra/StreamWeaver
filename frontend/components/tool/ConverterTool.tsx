@@ -40,7 +40,7 @@ export function ConverterTool() {
 
       // API returns: { success: true, message: "...", data: ["1080p", "720p", ...] }
       if (response && response.data) {
-        console.log("Full format response:", response.data);
+
 
         // Handle various response shapes to be safe
         let availableResolutions: string[] = [];
@@ -53,7 +53,7 @@ export function ConverterTool() {
           availableResolutions = response.data.formats;
         }
 
-        console.log("Parsed resolutions:", availableResolutions);
+
 
         if (availableResolutions.length > 0) {
           setResolutions(availableResolutions)

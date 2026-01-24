@@ -31,7 +31,14 @@ impl Data {
 // controller function that send_data when called with certain data;
 pub fn send_data(request: Request, stream: TcpStream) -> () {
     // match the argument with the defined set
-    let user = json_deserializer(&request.body_data);
+    let user = match json_deserializer::<Value>(&request.body_data) {
+        Ok(body) => body,
+        Err(e) => {
+            println!("ERROR: Failed to parse request body: {}", e);
+            errorhandler(&stream, &format!("Invalid JSON: {}", e));
+            return;
+        }
+    };
 
     //take the data out of it
     let body: Value = user.data;

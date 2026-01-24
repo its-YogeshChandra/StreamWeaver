@@ -13,7 +13,14 @@ use std::process::Command;
 #[tokio::main]
 pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
     // get the data from the request
-    let ResponseBody { data }: ResponseBody<Value> = json_deserializer(&request.body_data);
+    let ResponseBody { data } = match json_deserializer::<Value>(&request.body_data) {
+        Ok(body) => body,
+        Err(e) => {
+            println!("ERROR: Failed to parse request body: {}", e);
+            errorhandler(&stream, &format!("Invalid JSON: {}", e));
+            return;
+        }
+    };
 
     //match the data for;
     let iterable_data = data.as_object();
@@ -63,6 +70,15 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
     //fetch the error
     let error = String::from_utf8_lossy(&ytdlp_process.stderr);
 
+    // DEBUG: Print full yt-dlp output
+    println!("=== YT-DLP STDOUT START ===");
+    println!("{}", output);
+    println!("=== YT-DLP STDOUT END ===");
+    
+    println!("=== YT-DLP STDERR START ===");
+    println!("{}", error);
+    println!("=== YT-DLP STDERR END ===");
+
     // check if error isn't empty
     if !error.is_empty() {
         //call the error function
@@ -70,7 +86,7 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
             match &lines {
                 //if lines start with ERROR then throw error
                 s if s.starts_with("ERROR") => errorhandler(&stream, &s),
-                _ => println!("readin error"),
+                _ => println!("stderr line: {}", lines),
             }
         }
     }

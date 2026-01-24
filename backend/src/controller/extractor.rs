@@ -11,7 +11,19 @@ use tar::Builder;
 #[tokio::main]
 pub async fn extractor(request: Request, stream: TcpStream) {
     //get the data from the reqeust
-    let ResponseBody { data }: ResponseBody<Value> = json_deserializer(&request.body_data);
+    let ResponseBody { data } = match json_deserializer::<Value>(&request.body_data) {
+        Ok(body) => body,
+        Err(e) => {
+            println!("ERROR: Failed to parse request body: {}", e);
+            errorhandler(&stream, &format!("Invalid JSON: {}", e));
+            return;
+        }
+    };
+
+    // DEBUG: Print received payload
+    println!("=== EXTRACTOR RECEIVED PAYLOAD ===");
+    println!("{:?}", data);
+    println!("=== END PAYLOAD ===");
 
     // make the object out of the data
     let iterable_data = data.as_object();
@@ -20,7 +32,6 @@ pub async fn extractor(request: Request, stream: TcpStream) {
 
     // check for the keys in the data
     let keys = ["bitrate", "url", "content_length", "vcodec"];
-    let vcodec: Vec<&str> = vec!["avc1.64002a", "av01.0.09M.08"];
     if let Some(data) = iterable_data {
         //iterate the value
         for key in keys {
@@ -28,14 +39,16 @@ pub async fn extractor(request: Request, stream: TcpStream) {
             if !data.contains_key(key) {
                 //throw the error to the frontend
                 let error = format!("{}: key is missing", key,);
-                errorhandler(&stream, &error)
+                println!("ERROR: {}", error);
+                errorhandler(&stream, &error);
+                return;
             } else {
                 match (key, &data[key]) {
-                    //add the bitrate
+                    //add the bitrate - accept more formats including 4K, 1440p, 8K
                     ("bitrate", Value::String(s))
                         if matches!(
                             s.as_str(),
-                            "1080p" | "720p" | "480p" | "360p" | "240p" | "144p"
+                            "8K" | "4K" | "1440p" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p"
                         ) =>
                     {
                         main_data.insert(key.to_string(), s.clone());
@@ -52,33 +65,46 @@ pub async fn extractor(request: Request, stream: TcpStream) {
                             main_data.insert(key.to_string(), s.clone());
                         } else {
                             let error = "content length must be a number";
+                            println!("ERROR: {}", error);
                             errorhandler(&stream, error);
+                            return;
                         }
                     }
 
-                    //add the video codec
-                    ("vcodec", Value::String(s)) if vcodec.contains(&s.as_str()) => {
+                    //add the video codec - accept any non-empty string
+                    ("vcodec", Value::String(s)) if !s.is_empty() => {
                         main_data.insert(key.to_string(), s.clone());
                     }
 
                     ("bitrate", _) => {
-                        errorhandler(&stream, "invalid bitrate value");
+                        let error = format!("invalid bitrate value: {:?}", &data[key]);
+                        println!("ERROR: {}", error);
+                        errorhandler(&stream, &error);
                         return;
                     }
 
                     ("url", _) => {
+                        println!("ERROR: invalid url value");
                         errorhandler(&stream, "invalid url value");
                         return;
                     }
                     ("content_length", _) => {
+                        println!("ERROR: invalid content_length value");
                         errorhandler(&stream, "invalid content_length value");
+                        return;
                     }
 
                     ("vcodec", _) => {
-                        errorhandler(&stream, "invalid vcodec value");
+                        let error = format!("invalid vcodec value: {:?}", &data[key]);
+                        println!("ERROR: {}", error);
+                        errorhandler(&stream, &error);
                         return;
                     }
-                    (_, _) => errorhandler(&stream, "invalid payload"),
+                    (_, _) => {
+                        println!("ERROR: invalid payload");
+                        errorhandler(&stream, "invalid payload");
+                        return;
+                    }
                 }
             }
         }
@@ -225,11 +251,23 @@ impl VideoConfig {
     // We returns Option<Self> because the user might send an invalid resolution
     pub fn from_resolution(resolution: &str) -> Option<Self> {
         match resolution {
-            "4k" | "2160p" => Some(Self {
+            "8K" | "8k" | "4320p" => Some(Self {
+                bitrate: "80000k".to_string(),
+                maxrate: "85000k".to_string(),
+                bufsize: "160000k".to_string(),
+                scale_filter: "scale=-2:4320".to_string(),
+            }),
+            "4K" | "4k" | "2160p" => Some(Self {
                 bitrate: "45000k".to_string(),
                 maxrate: "48000k".to_string(),
                 bufsize: "90000k".to_string(),
                 scale_filter: "scale=-2:2160".to_string(),
+            }),
+            "1440p" | "2K" | "2k" => Some(Self {
+                bitrate: "16000k".to_string(),
+                maxrate: "17000k".to_string(),
+                bufsize: "32000k".to_string(),
+                scale_filter: "scale=-2:1440".to_string(),
             }),
             "1080p" => Some(Self {
                 bitrate: "8000k".to_string(),
@@ -254,6 +292,18 @@ impl VideoConfig {
                 maxrate: "856k".to_string(),
                 bufsize: "1600k".to_string(),
                 scale_filter: "scale=-2:360".to_string(),
+            }),
+            "240p" => Some(Self {
+                bitrate: "400k".to_string(),
+                maxrate: "428k".to_string(),
+                bufsize: "800k".to_string(),
+                scale_filter: "scale=-2:240".to_string(),
+            }),
+            "144p" => Some(Self {
+                bitrate: "200k".to_string(),
+                maxrate: "214k".to_string(),
+                bufsize: "400k".to_string(),
+                scale_filter: "scale=-2:144".to_string(),
             }),
             _ => None, // Handle invalid input
         }

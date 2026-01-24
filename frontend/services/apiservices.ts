@@ -22,7 +22,6 @@ export class ApiClass {
       }
 
       const payload = { url: url };
-      console.log("Calling format API:", formatUrl, "with payload:", payload);
 
       const formats = await axios.post(formatUrl, payload, {
         headers: {
@@ -30,7 +29,6 @@ export class ApiClass {
         }
       })
 
-      console.log("Format API response:", formats.data);
       return formats
 
     } catch (error) {
@@ -46,8 +44,6 @@ export class ApiClass {
         throw new Error("Stream URL is not configured in environment variables")
       }
 
-      console.log("Calling stream API:", streamUrl, "with payload:", payload);
-
       const value = await axios.post(streamUrl, payload, {
         headers: {
           "Content-Type": "application/json"
@@ -55,7 +51,6 @@ export class ApiClass {
         responseType: 'blob' // Important for binary files (TAR, ZIP, etc.)
       })
 
-      console.log("Stream API response:", value);
       return value;
 
     } catch (error) {
@@ -68,3 +63,4 @@ export class ApiClass {
 const apiService = new ApiClass();
 
 export default apiService;
+
