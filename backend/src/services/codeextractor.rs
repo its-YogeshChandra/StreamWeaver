@@ -1,8 +1,6 @@
 //extract the bitrate codes
 
 pub fn code_handler(output: &str, bitrate: &str, vcodec: &str) -> (String, String) {
-    println!("printing output : {}", output);
-
     let mut vidcode: String = String::new();
     let mut audcode: String = String::new();
     //loop the output line by line
@@ -24,7 +22,6 @@ pub fn code_handler(output: &str, bitrate: &str, vcodec: &str) -> (String, Strin
         }
     }
 
-    println!("vidcode : {}", vidcode);
-    println!("audcode : {}", audcode);
     (vidcode, audcode)
 }
+

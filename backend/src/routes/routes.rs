@@ -22,7 +22,6 @@ pub fn routes_moderator(request: Request, stream: TcpStream) -> () {
     //check the path in the request object and  then add respective function to it;
     let path = &request.route;
     let method = &request.method;
-    println!("route method is : {}", &method);
 
     //match the route and call differnt function
     let blank_route_error = String::from("route not found");
@@ -35,8 +34,6 @@ pub fn routes_moderator(request: Request, stream: TcpStream) -> () {
             _ => errorhandler(&stream, blank_route_error.as_str()),
         };
     } else if method == "OPTIONS" {
-        println!("option method called ");
-        //call the response feature
         handle_options_response(stream);
     } else {
         let error = "invalid method";

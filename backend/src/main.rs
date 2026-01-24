@@ -27,16 +27,12 @@ fn main() {
     match listener {
         Ok(connection) => {
             println!("Server listening on 0.0.0.0:8080");
-            println!("connection successfully established");
 
             // loop and check the stream from listener
             for stream in connection.incoming() {
                 //error handling for stream
                 match stream {
                     Ok(streamdata) => {
-                        println! {
-                        " data stream is receiving : {:?}", streamdata};
-
                         //connect to the handling stream
                         handle_connection(streamdata);
                     }
@@ -172,7 +168,7 @@ fn handle_connection(mut stream: TcpStream) {
             break; // End of headers
         }
 
-        println!("Received: {}", line);
+
 
         // Parse the first line: "POST /metadata HTTP/1.1"
         if is_first_line {
@@ -223,7 +219,6 @@ fn handle_connection(mut stream: TcpStream) {
             return;
         }
         body_data = String::from_utf8_lossy(&body).to_string();
-        println!("Body: {}", body_data);
     }
 
     // Step 3: Create the Request struct with all parsed values
@@ -237,7 +232,7 @@ fn handle_connection(mut stream: TcpStream) {
         params_data,
     );
 
-    println!("Final Request: {:?}", request);
+
 
     // Step 4: Drop buf_read to release the borrow on stream
     drop(buf_read);

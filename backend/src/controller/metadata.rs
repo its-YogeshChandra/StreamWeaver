@@ -53,7 +53,6 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
 
     //call the youtube api for the metadata available
     let video_url = body_data["url"].as_str().expect("expecting a string");
-    println!("video_url : {}", &video_url);
 
     //call the yt-dlp
     let ytdlp_process = Command::new("yt-dlp")
@@ -70,15 +69,6 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
     //fetch the error
     let error = String::from_utf8_lossy(&ytdlp_process.stderr);
 
-    // DEBUG: Print full yt-dlp output
-    println!("=== YT-DLP STDOUT START ===");
-    println!("{}", output);
-    println!("=== YT-DLP STDOUT END ===");
-    
-    println!("=== YT-DLP STDERR START ===");
-    println!("{}", error);
-    println!("=== YT-DLP STDERR END ===");
-
     // check if error isn't empty
     if !error.is_empty() {
         //call the error function
@@ -86,7 +76,7 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
             match &lines {
                 //if lines start with ERROR then throw error
                 s if s.starts_with("ERROR") => errorhandler(&stream, &s),
-                _ => println!("stderr line: {}", lines),
+                _ => {} // Ignore non-error stderr lines
             }
         }
     }
@@ -96,8 +86,6 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
     if !output.is_empty() {
         result_output = format_handler(&output.to_string(), &stream)
             .expect("error while getting value from format handler ");
-    } else {
-        println!("option is empty ");
     }
 
     //make struct to return
@@ -105,3 +93,4 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
     let response = Response::new_struct(true, message, result_output);
     handle_response(response, stream);
 }
+

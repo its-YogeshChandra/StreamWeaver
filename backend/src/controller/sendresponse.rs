@@ -34,7 +34,6 @@ pub fn send_data(request: Request, stream: TcpStream) -> () {
     let user = match json_deserializer::<Value>(&request.body_data) {
         Ok(body) => body,
         Err(e) => {
-            println!("ERROR: Failed to parse request body: {}", e);
             errorhandler(&stream, &format!("Invalid JSON: {}", e));
             return;
         }
@@ -57,16 +56,13 @@ pub fn send_data(request: Request, stream: TcpStream) -> () {
             } else {
                 match key {
                     "name" => body_data["name"] = obj[key].clone(),
-                    _ => {
-                        println!("error value of the obj ");
-                    }
+                    _ => {}
                 }
             }
         }
     }
 
     // check that if data field match to this name ;
-    println!("body_data : {}", body_data["name"]);
     if body_data["name"] == "adam" {
         let adam = Data::new("adam".to_string(), "Levine".to_string(), 21);
 

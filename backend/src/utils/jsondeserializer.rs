@@ -22,7 +22,7 @@ where
     // take the input and make the function
     let clean_data = datastring.trim_matches('\0').trim();
     
-    println!("DEBUG: Attempting to parse JSON: {}", clean_data);
+
     
     match serde_json::from_str(clean_data) {
         Ok(json_data) => {
@@ -30,7 +30,6 @@ where
             Ok(return_val)
         }
         Err(e) => {
-            println!("ERROR: JSON parse error: {}", e);
             Err(format!("JSON parse error: {}", e))
         }
     }

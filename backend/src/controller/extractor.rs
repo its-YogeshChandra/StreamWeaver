@@ -14,16 +14,12 @@ pub async fn extractor(request: Request, stream: TcpStream) {
     let ResponseBody { data } = match json_deserializer::<Value>(&request.body_data) {
         Ok(body) => body,
         Err(e) => {
-            println!("ERROR: Failed to parse request body: {}", e);
             errorhandler(&stream, &format!("Invalid JSON: {}", e));
             return;
         }
     };
 
-    // DEBUG: Print received payload
-    println!("=== EXTRACTOR RECEIVED PAYLOAD ===");
-    println!("{:?}", data);
-    println!("=== END PAYLOAD ===");
+
 
     // make the object out of the data
     let iterable_data = data.as_object();
@@ -39,7 +35,6 @@ pub async fn extractor(request: Request, stream: TcpStream) {
             if !data.contains_key(key) {
                 //throw the error to the frontend
                 let error = format!("{}: key is missing", key,);
-                println!("ERROR: {}", error);
                 errorhandler(&stream, &error);
                 return;
             } else {
@@ -65,7 +60,6 @@ pub async fn extractor(request: Request, stream: TcpStream) {
                             main_data.insert(key.to_string(), s.clone());
                         } else {
                             let error = "content length must be a number";
-                            println!("ERROR: {}", error);
                             errorhandler(&stream, error);
                             return;
                         }
@@ -78,30 +72,25 @@ pub async fn extractor(request: Request, stream: TcpStream) {
 
                     ("bitrate", _) => {
                         let error = format!("invalid bitrate value: {:?}", &data[key]);
-                        println!("ERROR: {}", error);
                         errorhandler(&stream, &error);
                         return;
                     }
 
                     ("url", _) => {
-                        println!("ERROR: invalid url value");
                         errorhandler(&stream, "invalid url value");
                         return;
                     }
                     ("content_length", _) => {
-                        println!("ERROR: invalid content_length value");
                         errorhandler(&stream, "invalid content_length value");
                         return;
                     }
 
                     ("vcodec", _) => {
                         let error = format!("invalid vcodec value: {:?}", &data[key]);
-                        println!("ERROR: {}", error);
                         errorhandler(&stream, &error);
                         return;
                     }
                     (_, _) => {
-                        println!("ERROR: invalid payload");
                         errorhandler(&stream, "invalid payload");
                         return;
                     }
@@ -196,12 +185,7 @@ pub async fn extractor(request: Request, stream: TcpStream) {
 
         //get the error if any
         let downloader_error = String::from_utf8_lossy(&downlaoder_ytdlp.stderr);
-        if !downloader_error.is_empty() {
-            println!("downloader_error: {}", downloader_error)
-        }
-
         if !downloader_output.is_empty() {
-            println!("downloader_output: {}", downloader_output);
             //make the path buff
             let mut main_path = std::path::PathBuf::from("public");
 
@@ -396,14 +380,10 @@ fn chunk_video(video_path: String, vidcodec: String, bitrate: String, content_le
         .output()
         .expect("failed to run ffmpeg");
 
-    println!("cmd is called ");
 
     //check the output and the erorr
-    if cmd.status.success() {
-        println!("ffmpeg output is : {:?}", cmd.stdout);
-        return;
-    } else {
-        eprint!(" ffmpeg faild with status : {}", cmd.status);
+    if !cmd.status.success() {
+        eprintln!("ffmpeg failed with status: {}", cmd.status);
     }
 }
 
@@ -415,7 +395,6 @@ fn read_dir(folder_string: String) -> std::io::Result<String> {
         let entry = entry?; // handle Result
         let path = entry.path();
         if let Some(file_name) = path.file_name() {
-            println!("{}", file_name.to_string_lossy());
             fileval = file_name.to_string_lossy().into_owned();
         }
     }
