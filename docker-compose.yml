@@ -21,30 +21,22 @@ services:
     # Environment variables (add as needed)
     environment:
       - RUST_LOG=info
-    
-    # Health check
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    networks:
+      - streamweaver-network
 
-  frontend:
-    build: ./frontend
-    container_name: streamweaver-frontend
+  nginx:
+    image: nginx:alpine
+    container_name: streamweaver-nginx
     ports:
-      - "3000:3000"
-    restart: unless-stopped
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
-    
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
+    restart: unless-stopped
+    networks:
+      - streamweaver-network
+
+networks:
+  streamweaver-network:
+    driver: bridge

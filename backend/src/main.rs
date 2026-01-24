@@ -160,7 +160,13 @@ fn handle_connection(mut stream: TcpStream) {
     // Step 1: Read all headers
     loop {
         line.clear();
-        let bytes_read = buf_read.read_line(&mut line).unwrap();
+        let bytes_read = match buf_read.read_line(&mut line) {
+            Ok(n) => n,
+            Err(e) => {
+                eprintln!("Error reading request line: {}", e);
+                return;
+            }
+        };
 
         if bytes_read == 0 || line.trim().is_empty() {
             break; // End of headers
@@ -212,7 +218,10 @@ fn handle_connection(mut stream: TcpStream) {
     let mut body_data = String::new();
     if content_length > 0 {
         let mut body = vec![0u8; content_length];
-        buf_read.read_exact(&mut body).unwrap();
+        if let Err(e) = buf_read.read_exact(&mut body) {
+            eprintln!("Error reading request body: {}", e);
+            return;
+        }
         body_data = String::from_utf8_lossy(&body).to_string();
         println!("Body: {}", body_data);
     }
