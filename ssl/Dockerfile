@@ -5,7 +5,7 @@ FROM certbot/certbot:nightly
 COPY renew-entrypoint.sh /renew-entrypoint.sh 
 
 #make the entrypoint file executable
-RUN chmod +x renew-entrypoint.sh 
+RUN chmod +x /renew-entrypoint.sh 
 
 #entrypoint for the file 
 ENTRYPOINT [ "/renew-entrypoint.sh" ]
