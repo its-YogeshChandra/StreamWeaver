@@ -17,7 +17,8 @@ services:
         reservations:
           memory: 256M
           cpus: '0.25'
-    
+   
+
     # Environment variables (add as needed)
     environment:
       - RUST_LOG=info
