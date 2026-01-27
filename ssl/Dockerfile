@@ -8,7 +8,7 @@ COPY renew-entrypoint.sh ./
 RUN chmod +x renew-entrypoint.sh 
 
 #entrypoint for the file 
-ENTRYPOINT [ "renew-entrypoint.sh" ]
+ENTRYPOINT [ "./renew-entrypoint.sh" ]
 
 
 
