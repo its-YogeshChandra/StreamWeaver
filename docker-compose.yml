@@ -1,14 +1,15 @@
 version: '3.8'
 
 services:
+  # ===========================================
+  # Backend - Your Rust Application
+  # ===========================================
   backend:
     build: ./backend
     container_name: streamweaver-backend
-    ports:
-      - "8080:8080"
     restart: unless-stopped
-    
-    # Resource limits
+    # ports:
+    #   - "8080:8080"  # Uncomment for direct access without nginx
     deploy:
       resources:
         limits:
@@ -17,46 +18,68 @@ services:
         reservations:
           memory: 256M
           cpus: '0.25'
-   
-
-    # Environment variables (add as needed)
     environment:
       - RUST_LOG=info
     networks:
       - streamweaver-network
 
+  # ===========================================
+  # Nginx - Reverse Proxy (Internal Only)
+  # ===========================================
   nginx:
     image: nginx:alpine
     container_name: streamweaver-nginx
-    ports:
-      - "80:80"
-      - "443:443"
+    # ports:
+    #   - "80:80"    # Uncomment if NOT using Cloudflare Tunnel
+    #   - "443:443"  # Uncomment if using Certbot SSL
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - certbot-conf:/etc/letsencrypt:ro 
-      - certbot-www:/var/www/certbot:ro 
+      # - certbot-conf:/etc/letsencrypt:ro    # Uncomment for Certbot SSL
+      # - certbot-www:/var/www/certbot:ro     # Uncomment for Certbot SSL
     depends_on:
       - backend
     restart: unless-stopped
     networks:
       - streamweaver-network
-   
-  certbot:
-    build: ./ssl 
-    container_name: streamweaver-ssl
-    volumes: 
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
-    depends_on:
-         - nginx
+
+  # ===========================================
+  # Cloudflare Tunnel - Secure Connection
+  # ===========================================
+  # Get your token from: Cloudflare Dashboard → Zero Trust → Networks → Tunnels
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: streamweaver-tunnel
+    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     restart: unless-stopped
+    depends_on:
+      - nginx
     networks:
       - streamweaver-network
 
-volumes: 
-  certbot-conf:
-  certbot-www:
+  # ===========================================
+  # Certbot - SSL Certificate (Alternative to Cloudflare)
+  # ===========================================
+  # Uncomment this section if using Certbot instead of Cloudflare Tunnel
+  # certbot:
+  #   build: ./ssl
+  #   container_name: streamweaver-ssl
+  #   volumes:
+  #     - certbot-conf:/etc/letsencrypt
+  #     - certbot-www:/var/www/certbot
+  #   depends_on:
+  #     - nginx
+  #   restart: unless-stopped
+  #   networks:
+  #     - streamweaver-network
+
+# ===========================================
+# Volumes - Uncomment for Certbot SSL
+# ===========================================
+# volumes:
+#   certbot-conf:
+#   certbot-www:
 
 networks:
   streamweaver-network:
-   driver: bridge
+    driver: bridge
+
