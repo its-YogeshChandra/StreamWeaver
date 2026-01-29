@@ -34,7 +34,6 @@ pub fn handle_response<T: Serialize>(response: Response<T>, mut stream: TcpStrea
     //make the response string from it
     let response = format!(
         "HTTP/1.1 200 OK\r\n\
-        Access-Control-Allow-Origin: *\r\n\
         Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
         Access-Control-Allow-Headers: Content-Type\r\n\
         Content-Type: application/json\r\n\
@@ -56,7 +55,6 @@ pub fn handle_response<T: Serialize>(response: Response<T>, mut stream: TcpStrea
 pub fn handle_options_response(mut stream: TcpStream) {
     //format of response
     let response = "HTTP/1.1 200 OK\r\n\
-Access-Control-Allow-Origin: *\r\n\
 Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
 Access-Control-Allow-Headers: Content-Type\r\n\
 Content-Length: 0\r\n\
@@ -71,7 +69,6 @@ Content-Length: 0\r\n\
 pub fn handle_tar_response(mut stream: TcpStream, tar_buffer: Vec<u8>) {
     let headers = format!(
         "HTTP/1.1 200 OK\r\n\
-        Access-Control-Allow-Origin: *\r\n\
         Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
         Access-Control-Allow-Headers: Content-Type\r\n\
         Content-Type: application/x-tar\r\n\
