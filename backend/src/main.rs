@@ -201,6 +201,19 @@ fn handle_connection(mut stream: TcpStream) {
         // Parse headers (case-insensitive matching)
         let line_lower = line.to_lowercase();
 
+        // ===========================================
+        // NEW: Safe header parsing with if-let instead of unwrap()
+        // OLD CODE (commented out - caused "option is empty" panic):
+        // if line_lower.starts_with("content-length:") {
+        //     content_length = line.split(':').nth(1).unwrap().trim().parse().unwrap_or(0);
+        // } else if line_lower.starts_with("content-type:") {
+        //     content_type = line.split(':').nth(1).unwrap().trim().to_string();
+        // } else if line_lower.starts_with("host:") {
+        //     host = line.split(':').nth(1).unwrap().trim().to_string();
+        // }
+        // ===========================================
+        
+        // NEW CODE START
         if line_lower.starts_with("content-length:") {
             if let Some(val) = line.split(':').nth(1) {
                 content_length = val.trim().parse().unwrap_or(0);
@@ -215,7 +228,16 @@ fn handle_connection(mut stream: TcpStream) {
             if parts.len() > 1 {
                 host = parts[1].trim().to_string();
             }
+        } else if line_lower.starts_with("transfer-encoding:") {
+            // Check for chunked transfer encoding
+            if line_lower.contains("chunked") {
+                eprintln!("[DEBUG] Chunked transfer encoding detected");
+            }
         }
+        // NEW CODE END
+
+        // Log all headers for debugging (can be removed in production)
+        eprintln!("[DEBUG] Header: {}", line.trim());
     }
 
     // Step 2: Read the body
@@ -223,11 +245,34 @@ fn handle_connection(mut stream: TcpStream) {
     if content_length > 0 {
         let mut body = vec![0u8; content_length];
         if let Err(e) = buf_read.read_exact(&mut body) {
-            eprintln!("Error reading request body: {}", e);
+            eprintln!("[ERROR] Error reading request body: {}", e);
             return;
         }
         body_data = String::from_utf8_lossy(&body).to_string();
+    } else if method == "POST" {
+        // ===========================================
+        // NEW: Fallback for POST without Content-Length (e.g., chunked encoding)
+        // This handles cases where Cloudflare tunnel might strip Content-Length
+        // ===========================================
+        eprintln!("[DEBUG] POST with no Content-Length, attempting to read available data...");
+        let mut temp_buf = [0u8; 8192];
+        match buf_read.read(&mut temp_buf) {
+            Ok(n) if n > 0 => {
+                body_data = String::from_utf8_lossy(&temp_buf[..n]).to_string();
+                eprintln!("[DEBUG] Read {} bytes without Content-Length", n);
+            }
+            Ok(_) => {
+                eprintln!("[DEBUG] No data available to read");
+            }
+            Err(e) => {
+                eprintln!("[DEBUG] Error reading: {}", e);
+            }
+        }
     }
+
+    // Debug logging
+    eprintln!("[DEBUG] Method: {}, Route: {}, Content-Length: {}", method, route, content_length);
+    eprintln!("[DEBUG] Body data (first 200 chars): {}", &body_data.chars().take(200).collect::<String>());
 
     // Step 3: Create the Request struct with all parsed values
     let request = Request::new(
