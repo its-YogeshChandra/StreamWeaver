@@ -202,11 +202,19 @@ fn handle_connection(mut stream: TcpStream) {
         let line_lower = line.to_lowercase();
 
         if line_lower.starts_with("content-length:") {
-            content_length = line.split(':').nth(1).unwrap().trim().parse().unwrap_or(0);
+            if let Some(val) = line.split(':').nth(1) {
+                content_length = val.trim().parse().unwrap_or(0);
+            }
         } else if line_lower.starts_with("content-type:") {
-            content_type = line.split(':').nth(1).unwrap().trim().to_string();
+            if let Some(val) = line.split(':').nth(1) {
+                content_type = val.trim().to_string();
+            }
         } else if line_lower.starts_with("host:") {
-            host = line.split(':').nth(1).unwrap().trim().to_string();
+            // Host header may contain port (e.g., "localhost:8080"), so join remaining parts
+            let parts: Vec<&str> = line.splitn(2, ':').collect();
+            if parts.len() > 1 {
+                host = parts[1].trim().to_string();
+            }
         }
     }
 

@@ -5,6 +5,24 @@ use crate::utils::responsesystem::handle_options_response;
 use std::io::Write;
 use std::net::TcpStream;
 
+// Health check response for GET /
+fn handle_health_check(mut stream: TcpStream) {
+    let body = r#"{"status":"ok","message":"StreamWeaver backend is running"}"#;
+    let response = format!(
+        "HTTP/1.1 200 OK\r\n\
+        Access-Control-Allow-Origin: *\r\n\
+        Content-Type: application/json\r\n\
+        Content-Length: {}\r\n\
+        Connection: close\r\n\
+        \r\n\
+        {}",
+        body.len(),
+        body
+    );
+    let _ = stream.write_all(response.as_bytes());
+    let _ = stream.flush();
+}
+
 //
 // pub fn routes_creator(request: Request) -> Vec<RouteData> {
 //     // call the routes_data struct with instance function
@@ -31,6 +49,11 @@ pub fn routes_moderator(request: Request, stream: TcpStream) -> () {
             "/create" => send_data(request, stream),
             "/metadata" => meta_data_and_options(request, stream),
             "/extractor" => extractor(request, stream),
+            _ => errorhandler(&stream, blank_route_error.as_str()),
+        };
+    } else if method == "GET" {
+        match path.as_str() {
+            "/" | "/health" => handle_health_check(stream),
             _ => errorhandler(&stream, blank_route_error.as_str()),
         };
     } else if method == "OPTIONS" {
