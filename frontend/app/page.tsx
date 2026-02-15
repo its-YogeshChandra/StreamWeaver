@@ -1,27 +1,24 @@
-import { BackgroundShapes } from "@/components/layout/BackgroundShapes";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ConverterTool } from "@/components/tool/ConverterTool";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center p-6 md:p-12 overflow-hidden">
-      <BackgroundShapes />
-
-      <div className="z-10 w-full max-w-5xl mx-auto space-y-12">
-        <header className="text-center space-y-4">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900">
-            Stream<span className="text-happy-blue">Weaver</span>
+    <DashboardShell>
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="text-center space-y-2 max-w-2xl mx-auto px-4">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight lg:text-7xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 dark:from-white dark:via-gray-200 dark:to-gray-400">
+            StreamWeaver
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto font-light">
-            Convert any video into professional adaptive streaming formats instantly.
+          <p className="text-muted-foreground text-lg md:text-xl font-light">
+            Professional-grade HLS video transcoding for modern streaming applications.
           </p>
-        </header>
+        </div>
 
-        <ConverterTool />
-
-        <footer className="text-center text-sm text-gray-400 pt-12">
-          &copy; {new Date().getFullYear()} StreamWeaver. Designed for creators.
-        </footer>
+        <div className="w-full relative z-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 blur-3xl -z-10 rounded-full transform scale-75 opacity-50 dark:opacity-30" />
+          <ConverterTool />
+        </div>
       </div>
-    </main>
+    </DashboardShell>
   );
 }

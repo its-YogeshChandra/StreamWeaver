@@ -148,12 +148,12 @@ export function ConverterTool() {
   }
 
   return (
-    <Card className="w-full max-w-3xl mx-auto border-0 shadow-2xl bg-white/90 backdrop-blur-xl ring-1 ring-gray-200/50">
-      <CardHeader className="text-center pb-2">
-        <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-gray-900 to-gray-600">
+    <Card className="w-full max-w-3xl mx-auto border shadow-2xl bg-card/50 backdrop-blur-xl ring-1 ring-border/50">
+      <CardHeader className="text-center pb-6 border-b">
+        <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
           HLS Converter
         </CardTitle>
-        <CardDescription className="text-base">
+        <CardDescription className="text-base text-muted-foreground mt-2">
           Transform your videos into adaptive bitrates for seamless streaming
         </CardDescription>
       </CardHeader>
@@ -164,14 +164,14 @@ export function ConverterTool() {
           {state === "INPUT" && (
             <motion.div
               key="input"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              exit={{ opacity: 0, y: -10 }}
               className="w-full space-y-6"
             >
               <UrlInput onSubmit={handleUrlSubmit} isLoading={isLoading} />
               {error && (
-                <p className="text-red-500 text-center bg-red-50 p-3 rounded-lg text-sm">
+                <p className="text-destructive text-center bg-destructive/10 p-3 rounded-lg text-sm">
                   {error}
                 </p>
               )}
@@ -201,7 +201,7 @@ export function ConverterTool() {
               <div className="flex justify-end pt-4">
                 <Button
                   size="lg"
-                  variant="happy"
+                  variant="default"
                   disabled={!streamConfig.resolution}
                   onClick={handleProcess}
                   className="w-full md:w-auto min-w-[200px]"
@@ -211,7 +211,7 @@ export function ConverterTool() {
               </div>
 
               {error && (
-                <p className="text-red-500 text-center bg-red-50 p-3 rounded-lg text-sm">
+                <p className="text-destructive text-center bg-destructive/10 p-3 rounded-lg text-sm">
                   {error}
                 </p>
               )}
@@ -237,15 +237,15 @@ export function ConverterTool() {
               className="space-y-6"
             >
               <div className="text-center pb-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Download className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Download className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">Conversion Complete!</h3>
-                <p className="text-gray-500">Your download should have started automatically.</p>
+                <h3 className="text-2xl font-bold text-foreground">Conversion Complete!</h3>
+                <p className="text-muted-foreground">Your download should have started automatically.</p>
               </div>
 
               {/* Original Video Preview */}
-              <div className="aspect-video w-full rounded-xl overflow-hidden bg-black shadow-lg">
+              <div className="aspect-video w-full rounded-xl overflow-hidden bg-black shadow-lg border border-border">
                 <iframe
                   width="100%"
                   height="100%"
@@ -261,7 +261,7 @@ export function ConverterTool() {
                 {downloadBlob && (
                   <Button
                     size="lg"
-                    variant="happy"
+                    variant="default"
                     className="w-full"
                     onClick={() => {
                       const downloadUrl = window.URL.createObjectURL(downloadBlob)
