@@ -1,8 +1,5 @@
 #build stage 
-FROM node:22-alpine as build
-
-#Install bun 
-RUN corepack enable && corepack prepare bun@latest --activate
+FROM oven/bun:latest as build
 
 #set the working directory 
 WORKDIR /app

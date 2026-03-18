@@ -42,7 +42,7 @@ export function UrlInput({ onSubmit, isLoading }: UrlInputProps) {
                         >
                             <Button
                                 size="lg"
-                                variant="happy"
+                                variant="outline"
                                 type="submit"
                                 disabled={isLoading}
                                 className="h-12 px-6 rounded-lg text-base font-semibold"
