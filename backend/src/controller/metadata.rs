@@ -54,13 +54,11 @@ pub async fn meta_data_and_options(request: Request, stream: TcpStream) -> () {
     //call the youtube api for the metadata available
     let video_url = body_data["url"].as_str().expect("expecting a string");
 
-    //call the yt-dlp with oauth2 authentication
+    //call the yt-dlp with cookies authentication
     let ytdlp_process = Command::new("yt-dlp")
         .arg("--list-formats")
-        .arg("--username")
-        .arg("oauth2")
-        .arg("--password")
-        .arg("")
+        .arg("--cookies")
+        .arg("/app/cookies.txt")
         .arg(video_url)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
