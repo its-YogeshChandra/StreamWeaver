@@ -109,16 +109,21 @@ pub async fn extractor(request: Request, stream: TcpStream) {
         }
     };
 
+    //give the cookie file path 
+    let cookie_file_val1 = "/app/cookies.txt";
+
     //call the ytdlp_process to fetch the data
     let ytdlp_process = Command::new("yt-dlp")
         .arg("--list-formats")
+        .arg("--cookies")
+        .arg(cookie_file_val1)
         .arg(video_url)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
         .expect("failed to execute the process");
 
-    //fix the data to that string
+    //fix the data to that string 
     let output = String::from_utf8_lossy(&ytdlp_process.stdout);
 
     //get the error
@@ -167,11 +172,16 @@ pub async fn extractor(request: Request, stream: TcpStream) {
 
         // Define output file template
         let output_template = format!("{}/%(title)s.%(ext)s", video_download_folder);
+        
+       //path to the cookie file 
+       let cookie_file_val2 = "/app/cookies.txt";
 
         //download the video using the codes
         let downlaoder_ytdlp = Command::new("yt-dlp")
             .arg("-f")
             .arg(combined_code)
+            .arg("--cookies")
+            .arg(cookie_file_val2)
             .arg(video_url)
             .arg("-o")
             .arg(output_template)
