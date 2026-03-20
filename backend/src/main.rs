@@ -21,12 +21,12 @@ fn main() {
     println!("Starting backend server...");
     
     //creating a simple webserver
-    let listener = TcpListener::bind("0.0.0.0:8080");
+    let listener = TcpListener::bind("0.0.0.0:9000");
 
     // error handling if error while handling error
     match listener {
         Ok(connection) => {
-            println!("Server listening on 0.0.0.0:8080");
+            println!("Server listening on 0.0.0.0:9000");
 
             // loop and check the stream from listener
             for stream in connection.incoming() {
@@ -44,100 +44,12 @@ fn main() {
             }
         }
         Err(error) => {
-            eprintln!("ERROR: Failed to bind to 0.0.0.0:8080");
+            eprintln!("ERROR: Failed to bind to 0.0.0.0:9000");
             eprintln!("Error details: {}", error);
             std::process::exit(1);
         }
     }
 }
-
-//option using impl
-//
-// fn handle_connection(mut stream: TcpStream) {
-//     //creating buffer
-//     //Buffers in Rust: In Rust, a buffer is typically a block of memory used for temporary storage of data. Buffers are commonly used when reading or writing data to or from sources like files, network sockets, or memory
-//
-//     let mut reader = BufReader::new(&mut stream);
-//
-//     //read value
-//
-//     //make instance of request and update the values
-//     let mut request_data = Request::new(
-//         "random".to_string(),
-//         "random".to_string(),
-//         "random".to_string(),
-//         "random".to_string(),
-//         "random".to_string(),
-//         "random".to_string(),
-//         "random".to_string(),
-//     );
-//
-//     //read the request line
-//     let mut request_line = String::new();
-//     if reader.read_line(&mut request_line).unwrap() == 0 {
-//         //eror while reading valule
-//         println!("error while reading value");
-//         return;
-//     }
-//
-//     //parse the first line
-//     let firstline: Vec<&str> = request_line.split_whitespace().collect();
-//     println!("first line is : {:?}", firstline);
-//
-//     if firstline.len() > 3 {
-//         //print th vaule
-//         println!("first line value : {:?}", firstline);
-//
-//         request_data.method = firstline[0].to_string();
-//         request_data.route = firstline[1].to_string();
-//         request_data.httpversion = firstline[2].to_string();
-//     }
-//
-//     //for content length
-//     let mut content_length = 0;
-//     loop {
-//         let mut line = String::new();
-//         let bytes_read = reader.read_line(&mut line).unwrap();
-//
-//         if bytes_read == 0 || line == "\r\n" {
-//             break;
-//         }
-//         //parse handler
-//         if line.to_lowercase().starts_with("content_length:") {
-//             let parts: Vec<&str> = line.split_whitespace().collect();
-//             if parts.len() > 1 {
-//                 content_length = parts[1].parse::<usize>().unwrap();
-//             } else if line.starts_with("Content-Type:") {
-//                 request_data.content_type = line.trim().to_string();
-//             } else if line.starts_with("Host: ") {
-//                 request_data.host = line.trim().to_string();
-//             }
-//         }
-//     }
-//
-//     if content_length > 0 {
-//         let mut body_buffer = vec![0; content_length];
-//
-//         //read the block until we get all the bytes
-//         reader.read_exact(&mut body_buffer).unwrap();
-//         request_data.body_data = String::from_utf8_lossy(&body_buffer).to_string();
-//     }
-//
-//     //println the final rqeust object
-//     println!("final request object : {:?}", request_data);
-//
-//     //drop the reaqder to release borrow on stream
-//     drop(reader);
-//
-//     //call the router function
-//     routes_moderator(request_data, stream);
-// }
-
-//request format
-//HTTP-Version Status-Code Reason-Phrase CRLF
-// headers CRLF
-// message-body/
-//
 
 fn handle_connection(mut stream: TcpStream) {
     let mut buf_read = BufReader::new(&mut stream);

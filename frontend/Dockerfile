@@ -1,8 +1,5 @@
 #build stage 
-FROM oven/bun:latest as build
-
-#set the working directory 
-WORKDIR /app
+FROM oven/bun:latest AS build
 
 #Copy dependency files first for better layer caching 
 COPY package.json bun.lock* ./
@@ -21,15 +18,15 @@ ARG NEXT_PUBLIC_STREAM_URL
 RUN bun run build
 
 # ---- Production Stage ----
-FROM node:22-alpine as production
+FROM node:22-alpine AS production
 
 #set the working dir 
 WORKDIR /app
 
 #set env node
-ENV NODE_ENV = production
+ENV NODE_ENV=production
 
-ENV PORT = 4000
+ENV PORT=4000
 
 #port at which the server run 
 EXPOSE 4000 

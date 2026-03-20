@@ -1,11 +1,5 @@
 #from where to load the file 
-#since the backend uses rust
 FROM rust:1.83 AS builder
-
-
-# #need ffmpeg and ytdlp 
-# RUN apt-get update 
-
 
 #path to the working directory
 WORKDIR /app
@@ -14,11 +8,11 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release
-RUN rm -rf src 
+RUN rm -rf src target/release/deps/backend* target/release/backend
 
 #Build real app
 COPY . .
-RUN cargo build --release 
+RUN touch src/main.rs && cargo build --release
 
 
 
@@ -46,7 +40,7 @@ RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o 
 COPY --from=builder /app/target/release/backend /usr/local/bin/backend
 
 #the port 
-EXPOSE 8080
+EXPOSE 9000
 
 #executables 
 CMD ["backend"]
