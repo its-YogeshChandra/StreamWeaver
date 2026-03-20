@@ -1,6 +1,9 @@
 #build stage 
 FROM oven/bun:latest AS build
 
+#setup workdir 
+WORKDIR /app
+
 #Copy dependency files first for better layer caching 
 COPY package.json bun.lock* ./
 
